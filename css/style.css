@@ -67,7 +67,7 @@ body {
 /* **Header Styles** */
 header {
   text-align: center;
-  padding: 2rem;
+  padding: 3rem;
   background: linear-gradient(135deg, 
     var(--gradient-start) 0%,
     var(--gradient-end) 100%
@@ -100,28 +100,23 @@ header::before {
 .header-content {
   display: flex;
   flex-direction: column;
-  /* Stack children vertically */
   align-items: center;
-  /* Center horizontally */
   justify-content: center;
-  /* Center vertically */
-  padding: 2rem 0;
-  /* Add some vertical padding */
+  padding: 3rem 0 2rem 0;
   position: relative;
-  /* Establish a positioning context */
 }
 
 /* **Banner Image Styles** */
 .banner-image {
   text-align: center;
-  padding: 1rem;
+  padding: 2rem;
   max-width: 100%;
 }
 
 .main-banner {
   max-width: 100%;
   height: auto;
-  max-height: 200px;
+  max-height: 320px;
   border-radius: 0.5rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   transition: transform 0.3s ease, box-shadow 0.3s ease;
