@@ -111,32 +111,26 @@ header::before {
   /* Establish a positioning context */
 }
 
-/* **ASCII Art Styles** */
-.ascii-art {
-  color: white;
-  font-size: 0.7rem;
-  line-height: 1.2;
-  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+/* **Banner Image Styles** */
+.banner-image {
   text-align: center;
-  /* Center the text within the container */
-  font-weight: bold;
   padding: 1rem;
-  /* Add some padding around the ASCII art */
-  border-radius: 0.5rem;
-  /* Optional: Round the corners */
   max-width: 100%;
-  /* Ensure it doesn't overflow */
-  word-wrap: break-word;
-  /* Handle long lines gracefully */
-  font-family: 'Courier New', Courier, monospace;
-  /* Ensure monospace font */
-  transition: transform 0.3s ease;
-  /* Optional: Add transition */
 }
 
-.ascii-art:hover {
-  transform: scale(1.05);
-  /* Optional: Add hover effect */
+.main-banner {
+  max-width: 100%;
+  height: auto;
+  max-height: 200px;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  object-fit: contain;
+}
+
+.main-banner:hover {
+  transform: scale(1.02);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
 }
 
 /* **System Status Styles** */
