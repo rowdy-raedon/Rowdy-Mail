@@ -6,7 +6,7 @@ Aight Rowdy, let’s flip that repo and make it scream **Rowdy Mail** — your s
 
 <div align="center">
 
-![Rowdy Mail Banner](images/banner.png)
+![Rowdy Mail Banner](images/rowdymailbanner.png)
 
 [![GitHub Stars](https://img.shields.io/github/stars/rowdy-raedon/rowdy-mail?style=for-the-badge\&logo=github\&color=yellow)](https://github.com/rowdy-raedon/rowdy-mail/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/rowdy-raedon/rowdy-mail?style=for-the-badge\&logo=github\&color=orange)](https://github.com/rowdy-raedon/rowdy-mail/network/members)
