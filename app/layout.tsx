@@ -8,8 +8,8 @@ import { Provider } from "./provider";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Stack Template",
-  description: "A Multi-tenant Next.js Starter Template",
+  title: "RowdyMail - Temporary Email Service",
+  description: "Generate temporary email addresses with your custom domain. Perfect for testing, signups, and privacy protection.",
 };
 
 export default function RootLayout({

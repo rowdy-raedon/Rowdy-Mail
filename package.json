@@ -1,6 +1,6 @@
 {
-  "name": "template",
-  "version": "0.1.0",
+  "name": "temp-email-service",
+  "version": "1.0.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
@@ -16,14 +16,17 @@
     "@radix-ui/react-separator": "^1.0.3",
     "@radix-ui/react-slot": "^1.0.2",
     "@stackframe/stack": "^2.7.16",
+    "@supabase/supabase-js": "^2.50.3",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.1",
+    "crypto": "^1.0.1",
     "lucide-react": "^0.475.0",
     "next": "^15.1.7",
     "next-themes": "^0.2.1",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "recharts": "^2.15.1",
+    "sonner": "^2.0.5",
     "tailwind-merge": "^2.5.2",
     "tailwindcss-animate": "^1.0.7"
   },
