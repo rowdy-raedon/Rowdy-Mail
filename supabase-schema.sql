@@ -7,7 +7,8 @@ CREATE TABLE temp_emails (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE,
   is_active BOOLEAN DEFAULT TRUE,
-  messages_count INTEGER DEFAULT 0
+  messages_count INTEGER DEFAULT 0,
+  improvmx_alias_id INTEGER
 );
 
 -- Create messages table

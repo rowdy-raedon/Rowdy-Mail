@@ -1,5 +1,6 @@
 import { randomBytes } from 'crypto'
 import { supabase } from './supabase'
+import { ImprovMXAPI } from './improvemx-api'
 
 export interface TempEmailOptions {
   userId?: string
@@ -17,6 +18,7 @@ export interface TempEmail {
   expiresAt: string | null
   isActive: boolean
   messagesCount: number
+  improvmxAliasId?: number
 }
 
 const DOMAIN = 'rowdymail.pro'
@@ -41,6 +43,21 @@ export class EmailGenerator {
       ? new Date(Date.now() + options.expiresIn * 60 * 60 * 1000).toISOString()
       : null
 
+    let improvmxAliasId: number | undefined
+
+    try {
+      // Create ImprovMX alias to forward to webhook
+      const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhook/improvmx`
+      const alias = await ImprovMXAPI.createAlias(
+        email.split('@')[0], // local part only
+        webhookUrl
+      )
+      improvmxAliasId = alias.id
+    } catch (error) {
+      console.warn('Failed to create ImprovMX alias:', error)
+      // Continue without alias - emails will still work via catch-all
+    }
+
     const { data, error } = await supabase
       .from('temp_emails')
       .insert({
@@ -48,6 +65,7 @@ export class EmailGenerator {
         user_id: options.userId || null,
         team_id: options.teamId || null,
         expires_at: expiresAt,
+        improvmx_alias_id: improvmxAliasId,
       })
       .select()
       .single()
@@ -65,6 +83,7 @@ export class EmailGenerator {
       expiresAt: data.expires_at,
       isActive: data.is_active,
       messagesCount: data.messages_count,
+      improvmxAliasId: data.improvmx_alias_id,
     }
   }
 
@@ -93,6 +112,23 @@ export class EmailGenerator {
   }
 
   static async deactivateEmail(emailId: string, userId: string): Promise<void> {
+    // First get the email to check for ImprovMX alias
+    const { data: email } = await supabase
+      .from('temp_emails')
+      .select('improvmx_alias_id')
+      .eq('id', emailId)
+      .eq('user_id', userId)
+      .single()
+
+    // Clean up ImprovMX alias if it exists
+    if (email?.improvmx_alias_id) {
+      try {
+        await ImprovMXAPI.deleteAlias(email.improvmx_alias_id)
+      } catch (error) {
+        console.warn('Failed to delete ImprovMX alias:', error)
+      }
+    }
+
     const { error } = await supabase
       .from('temp_emails')
       .update({ is_active: false })
