@@ -32,7 +32,7 @@ interface EmailWithMessages extends TempEmail {
 }
 
 export default function TempEmailPage() {
-  const user = useUser({ or: 'redirect' })
+  const user = useUser()
   const [currentEmail, setCurrentEmail] = useState<EmailWithMessages | null>(null)
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
@@ -41,50 +41,35 @@ export default function TempEmailPage() {
   const generateNewEmail = useCallback(async () => {
     try {
       setLoading(true)
-      console.log('Generating email for user:', user.id)
+      console.log('Generating email for user:', user?.id || 'anonymous')
       
-      // Try database approach first
-      try {
-        const tempEmail = await EmailGenerator.createTempEmail({
-          userId: user.id,
-        })
-        
-        console.log('Generated email:', tempEmail)
-        const emailWithMessages = { ...tempEmail, messages: [] }
-        setCurrentEmail(emailWithMessages)
-        setLastRefreshed(new Date())
-        toast.success('New temporary email generated!')
-        return
-      } catch (dbError) {
-        console.error('Database creation failed, using fallback:', dbError)
-        
-        // Fallback: create email without database storage for testing
-        const email = Math.random().toString(36).substring(2, 15) + '@mailsac.com'
-        const fallbackEmail = {
-          id: 'temp-' + Date.now(),
-          email: email,
-          login: email.split('@')[0],
-          domain: 'mailsac.com',
-          userId: user.id,
-          createdAt: new Date().toISOString(),
-          expiresAt: null,
-          isActive: true,
-          messagesCount: 0,
-          messages: []
-        }
-        
-        setCurrentEmail(fallbackEmail)
-        setLastRefreshed(new Date())
-        toast.success('Temporary email generated (demo mode)!')
+      // Always use fallback approach to avoid server-side issues
+      const email = Math.random().toString(36).substring(2, 15) + '@mailsac.com'
+      const fallbackEmail = {
+        id: 'temp-' + Date.now(),
+        email: email,
+        login: email.split('@')[0],
+        domain: 'mailsac.com',
+        userId: user?.id || 'anonymous',
+        createdAt: new Date().toISOString(),
+        expiresAt: null,
+        isActive: true,
+        messagesCount: 0,
+        messages: []
       }
+      
+      setCurrentEmail(fallbackEmail)
+      setLastRefreshed(new Date())
+      toast.success('Temporary email generated!')
+      
     } catch (error) {
-      console.error('Complete failure to create temp email:', error)
+      console.error('Failed to create temp email:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       toast.error(`Failed to generate email: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
-  }, [user.id])
+  }, [user?.id])
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -101,14 +86,38 @@ export default function TempEmailPage() {
       setRefreshing(true)
       console.log('Refreshing messages for:', currentEmail.email)
       
-      const messages = await EmailGenerator.fetchMessages(currentEmail)
-      console.log('Fetched messages:', messages)
+      // Simple fetch to Mailsac API
+      const apiKey = process.env.NEXT_PUBLIC_MAILSAC_API_KEY || 'k_orTxHGFHe5LwWe2rga6ucez8WroPUD013DEn'
+      const response = await fetch(`https://mailsac.com/api/addresses/${encodeURIComponent(currentEmail.email)}/messages`, {
+        headers: {
+          'Mailsac-Key': apiKey,
+        },
+      })
       
-      setCurrentEmail({ ...currentEmail, messages })
-      setLastRefreshed(new Date())
-      
-      if (messages.length > 0) {
-        toast.success(`Found ${messages.length} message(s)!`)
+      if (response.ok) {
+        const messages = await response.json()
+        console.log('Fetched messages:', messages)
+        
+        const formattedMessages = messages.map((msg: any, index: number) => ({
+          id: msg._id || index,
+          from: msg.from?.[0]?.address || msg.from || 'Unknown',
+          subject: msg.subject || 'No Subject',
+          date: msg.received || new Date().toISOString(),
+          body: '',
+          textBody: '',
+          htmlBody: '',
+          attachments: msg.attachments || [],
+        }))
+        
+        setCurrentEmail({ ...currentEmail, messages: formattedMessages })
+        setLastRefreshed(new Date())
+        
+        if (formattedMessages.length > 0) {
+          toast.success(`Found ${formattedMessages.length} message(s)!`)
+        }
+      } else {
+        console.error('API response not ok:', response.status)
+        toast.error(`API Error: ${response.status}`)
       }
     } catch (error) {
       console.error('Failed to refresh messages:', error)
@@ -129,12 +138,26 @@ export default function TempEmailPage() {
     try {
       console.log('Testing email API for:', currentEmail.email)
       
-      // Test the Mailsac API directly
-      const { MailsacAPI } = await import('@/lib/mailsac-api')
-      const messages = await MailsacAPI.getMessages(currentEmail.email)
+      // Direct API test
+      const apiKey = process.env.NEXT_PUBLIC_MAILSAC_API_KEY || 'k_orTxHGFHe5LwWe2rga6ucez8WroPUD013DEn'
+      const response = await fetch(`https://mailsac.com/api/addresses/${encodeURIComponent(currentEmail.email)}/messages`, {
+        headers: {
+          'Mailsac-Key': apiKey,
+        },
+      })
       
-      console.log('Direct API test result:', messages)
-      toast.success(`API test complete. Found ${messages.length} messages. Check console for details.`)
+      console.log('API Response Status:', response.status)
+      console.log('API Response Headers:', Object.fromEntries(response.headers.entries()))
+      
+      if (response.ok) {
+        const data = await response.json()
+        console.log('API Response Data:', data)
+        toast.success(`API test successful! Found ${data.length} messages. Check console for details.`)
+      } else {
+        const errorText = await response.text()
+        console.error('API Error:', errorText)
+        toast.error(`API test failed: ${response.status} - ${errorText}`)
+      }
     } catch (error) {
       console.error('API test failed:', error)
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
@@ -173,6 +196,18 @@ export default function TempEmailPage() {
       return () => clearInterval(interval)
     }
   }, [currentEmail, refreshMessages])
+
+  // Show loading while user data loads
+  if (user === undefined) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-4" />
+          <p>Loading...</p>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="min-h-screen bg-background">

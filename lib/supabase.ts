@@ -7,8 +7,9 @@ export interface Database {
         Row: {
           id: string
           email: string
+          login: string
+          domain: string
           user_id: string | null
-          team_id: string | null
           created_at: string
           expires_at: string | null
           is_active: boolean
@@ -17,8 +18,9 @@ export interface Database {
         Insert: {
           id?: string
           email: string
+          login: string
+          domain: string
           user_id?: string | null
-          team_id?: string | null
           created_at?: string
           expires_at?: string | null
           is_active?: boolean
@@ -27,8 +29,9 @@ export interface Database {
         Update: {
           id?: string
           email?: string
+          login?: string
+          domain?: string
           user_id?: string | null
-          team_id?: string | null
           created_at?: string
           expires_at?: string | null
           is_active?: boolean
