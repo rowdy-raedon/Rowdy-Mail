@@ -1,6 +1,6 @@
-# Next.js Multi-tenant Starter Template
+# Next.js Multi-tenant Starter Template with Temporary Email Service
 
-A minimalistic multi-tenant Next.js starter template with minimal setup and a modular design. Bring your own backend and database.
+A minimalistic multi-tenant Next.js starter template with temporary email functionality using Mailsac API. Features include user authentication, team management, and disposable email generation for testing and verification.
 
 [Demo](https://stack-template.vercel.app/)
 
@@ -33,7 +33,8 @@ A minimalistic multi-tenant Next.js starter template with minimal setup and a mo
 1. Clone the repository
 
     ```bash
-    git clone git@github.com:stack-auth/stack-template.git
+    git clone https://github.com/rowdy-raedon/multi-tenant-starter-template.git
+    cd multi-tenant-starter-template
     ```
 
 2. Install dependencies
@@ -42,24 +43,45 @@ A minimalistic multi-tenant Next.js starter template with minimal setup and a mo
     npm install
     ```
 
-3. Register an account on [Stack Auth](https://stack-auth.com), copy the keys from the dashboard, and paste them into the `.env.local` file. Then, enable "client team creation" on the team settings tab.
-
-    If you want to learn more about Stack Auth or self-host it, check out the [Docs](https://docs.stack-auth.com) and [GitHub](https://github.com/stack-auth/stack).
-
-4. Start the development server and go to [http://localhost:3000](http://localhost:3000)
+3. Set up your environment variables by copying the example file:
 
     ```bash
-    npm run dev 
+    cp .env.local.example .env.local
     ```
+
+4. Configure your services:
+
+    - **Stack Auth**: Register at [Stack Auth](https://stack-auth.com) and enable "client team creation"
+    - **Supabase**: Create a project at [Supabase](https://supabase.com) and run the schema from `supabase-schema.sql`
+    - **Mailsac**: Get an API key from [Mailsac](https://mailsac.com/api-keys)
+
+5. Update `.env.local` with your actual API keys and credentials
+
+6. Start the development server:
+
+    ```bash
+    npm run dev
+    ```
+
+7. Visit [http://localhost:3000](http://localhost:3000) to see your application
+
+## Configuration
+
+See `SETUP_GUIDE.md` for detailed configuration instructions including database setup and API key configuration.
 
 ## Features & Tech Stack
 
 - Next.js 14 app router
 - TypeScript
 - Tailwind & Shadcn UI
-- Stack Auth
+- Stack Auth (Authentication)
+- Supabase (Database)
+- Mailsac API (Temporary emails)
 - Multi-tenancy (teams/orgs)
 - Dark mode
+- Temporary email service
+- Real-time message retrieval
+- Email management dashboard
 
 ## Inspired by
 

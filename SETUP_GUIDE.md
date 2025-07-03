@@ -1,196 +1,201 @@
 # Temporary Email Service Setup Guide
 
-This guide will help you set up the temporary email service using your custom domain with ImprovMX and Cloudflare.
+This guide will help you set up the temporary email service using the Mailsac API for reliable disposable email generation.
 
 ## Prerequisites
 
-1. **Domain**: You should own a domain (e.g., `rowdymail.pro`)
-2. **Cloudflare Account**: Domain should be managed by Cloudflare
-3. **ImprovMX Account**: For email forwarding
-4. **Supabase Account**: For database
-5. **Stack Auth Account**: For authentication
+1. **Mailsac Account**: For temporary email API access
+2. **Supabase Account**: For database
+3. **Stack Auth Account**: For authentication
 
-## Step 1: Domain Configuration
+## Step 1: Mailsac Setup
 
-### Cloudflare DNS Setup
+### Create Mailsac Account
 
-1. Log into your Cloudflare dashboard
-2. Navigate to your domain (e.g., `rowdymail.pro`)
-3. Go to **DNS** tab
-4. Add the following records:
+1. Go to [Mailsac](https://mailsac.com/)
+2. Sign up for a free account
+3. Navigate to [API Keys](https://mailsac.com/api-keys)
+4. Generate a new API key
+5. Copy the API key for later use
 
-```
-Type: MX
-Name: @
-Content: mx1.improvmx.com
-Priority: 10
+### Mailsac Features
 
-Type: MX  
-Name: @
-Content: mx2.improvmx.com
-Priority: 20
-```
-
-### ImprovMX Configuration
-
-1. Go to [ImprovMX](https://improvmx.com/)
-2. Add your domain `rowdymail.pro`
-3. Set up email forwarding:
-   - Forward `*@rowdymail.pro` to your app's webhook
-   - Or set up alias forwarding to your Gmail account for testing
+- **Instant Email Creation**: Any email @mailsac.com is automatically created
+- **API Access**: Retrieve messages via REST API
+- **No Setup Required**: No domain configuration needed
+- **Reliable Service**: Professional email testing platform
 
 ## Step 2: Supabase Setup
 
-1. Create a new Supabase project
-2. Run the SQL schema from `supabase-schema.sql`:
-   - Go to SQL Editor in Supabase dashboard
-   - Copy and paste the contents of `supabase-schema.sql`
-   - Execute the query
+1. Create a new Supabase project at [Supabase](https://supabase.com)
+2. Go to the SQL Editor in your Supabase dashboard
+3. Copy and paste the contents of `supabase-schema.sql`
+4. Execute the query to create the required tables
 
-3. Get your Supabase credentials:
-   - Project URL
-   - Anon (public) key
-   - Service role key (for admin operations)
+### Get Supabase Credentials
+
+1. **Project URL**: Found in Settings > API
+2. **Anon Key**: Found in Settings > API
+3. **Service Role Key**: Found in Settings > API (keep this secret)
 
 ## Step 3: Stack Auth Setup
 
 1. Go to [Stack Auth](https://stack-auth.com)
 2. Create a new project
-3. Configure the project:
-   - Enable team creation
-   - Set redirect URLs
-   - Get your project credentials
+3. Configure the project settings:
+   - Enable team creation in the Teams tab
+   - Set appropriate redirect URLs for your domain
+4. Copy your project credentials:
+   - Project ID
+   - Publishable Client Key
+   - Secret Server Key
 
-## Step 4: Environment Variables
+## Step 4: Environment Configuration
 
-1. Copy `.env.local.example` to `.env.local`
-2. Fill in all the required values:
+1. Copy the example environment file:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+
+2. Update `.env.local` with your actual credentials:
 
 ```bash
 # Stack Auth
-NEXT_PUBLIC_STACK_PROJECT_ID=your_project_id
-NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=your_publishable_key
-STACK_SECRET_SERVER_KEY=your_secret_key
+NEXT_PUBLIC_STACK_PROJECT_ID=your_actual_project_id
+NEXT_PUBLIC_STACK_PUBLISHABLE_CLIENT_KEY=your_actual_publishable_key
+STACK_SECRET_SERVER_KEY=your_actual_secret_key
 
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_actual_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_actual_service_role_key
 
-# Email
-WEBHOOK_SECRET=your_webhook_secret
-DOMAIN=rowdymail.pro
+# Mailsac API
+MAILSAC_API_KEY=your_actual_mailsac_api_key
+
+# Application
+NEXT_PUBLIC_APP_URL=http://localhost:3000
 ```
 
 ## Step 5: Testing the Setup
 
-### Test Domain Configuration
+### Test Mailsac API
 
-1. **DNS Propagation**: Check if MX records are propagated
+Run the test script to verify your Mailsac integration:
+
+```bash
+node scripts/test-mailsac.js
+```
+
+### Test the Application
+
+1. Start the development server:
    ```bash
-   dig MX rowdymail.pro
+   npm run dev
    ```
 
-2. **ImprovMX Status**: Check if ImprovMX recognizes your domain
-   - Log into ImprovMX dashboard
-   - Verify domain status is "Active"
+2. Navigate to [http://localhost:3000](http://localhost:3000)
 
-### Test Email Forwarding
+3. Sign up or log in using Stack Auth
 
-1. **Simple Forward Test**:
-   - Send an email to `test@rowdymail.pro`
-   - Check if it forwards to your configured address
+4. Navigate to the Temporary Email section
 
-2. **Webhook Test**:
-   - Deploy your application
-   - Configure ImprovMX to forward to your webhook URL
-   - Send test emails to generated temporary addresses
+5. Generate a test email and verify it appears in your dashboard
 
-## Step 6: Production Deployment
+## Step 6: Using the Service
 
-### Webhook URLs
+### Generate Temporary Emails
 
-Configure ImprovMX to forward emails to your webhook:
+1. **Random Generation**: Creates emails like `abc123@mailsac.com`
+2. **Custom Generation**: Create emails like `mytest@mailsac.com`
+3. **Expiration**: Set optional expiration times for emails
+4. **Real-time**: Messages appear instantly when received
 
-- **Standard webhook**: `https://your-domain.com/api/webhook/email`
-- **ImprovMX format**: `https://your-domain.com/api/webhook/improvmx`
+### Message Management
 
-### Security
-
-1. Set a strong `WEBHOOK_SECRET` in production
-2. Enable HTTPS for all webhook endpoints
-3. Set up proper CORS policies
-4. Monitor webhook logs for suspicious activity
-
-## Step 7: Usage
-
-1. **Access the App**: Go to your deployed application
-2. **Sign Up/Login**: Use Stack Auth to authenticate
-3. **Create Team**: Create or join a team
-4. **Generate Emails**: Use the temp email interface to create temporary addresses
-5. **Receive Messages**: Messages sent to temporary addresses will appear in the inbox
+- **View Messages**: See all messages in the web interface
+- **Message Content**: View both text and HTML content
+- **Attachments**: Download and view email attachments
+- **Real-time Updates**: Refresh to see new messages
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **MX Records Not Working**:
-   - Check DNS propagation (can take up to 48 hours)
-   - Verify MX record values are correct
-   - Ensure TTL is not too high
+1. **Mailsac API Errors**:
+   - Verify your API key is correct
+   - Check that your account has API access
+   - Ensure you haven't exceeded rate limits
 
-2. **ImprovMX Not Receiving**:
-   - Check domain verification in ImprovMX dashboard
-   - Verify DNS records match ImprovMX requirements
-   - Test with simple forwarding first
+2. **Database Connection Issues**:
+   - Verify Supabase credentials are correct
+   - Check that the schema was applied successfully
+   - Ensure RLS policies are configured properly
 
-3. **Webhook Not Receiving**:
-   - Check webhook URL is accessible publicly
-   - Verify HTTPS is working
-   - Check webhook secret configuration
-   - Review server logs for errors
-
-4. **Database Issues**:
-   - Verify Supabase credentials
-   - Check RLS policies are configured correctly
-   - Ensure schema was applied successfully
+3. **Authentication Problems**:
+   - Verify Stack Auth project is properly configured
+   - Check that team creation is enabled
+   - Ensure redirect URLs are set correctly
 
 ### Debug Commands
 
 ```bash
-# Test DNS
-dig MX rowdymail.pro
-nslookup -type=MX rowdymail.pro
+# Test Mailsac API
+MAILSAC_API_KEY=your_key node scripts/test-mailsac.js
 
-# Test webhook endpoint
-curl -X GET https://your-domain.com/api/webhook/email
+# Check environment variables
+echo $MAILSAC_API_KEY
 
-# Check application logs
-npm run dev
+# Verify database connection
+# Check Supabase dashboard for connection logs
 ```
 
-### Support
+## Production Deployment
 
-- **ImprovMX**: Check their documentation and support
-- **Cloudflare**: DNS troubleshooting guides
-- **Supabase**: Database and authentication issues
-- **Stack Auth**: Authentication and team management
+### Security Considerations
+
+1. **API Keys**: Never commit real API keys to version control
+2. **Environment Variables**: Use your hosting platform's environment variable system
+3. **Rate Limiting**: Monitor API usage to avoid limits
+4. **HTTPS**: Ensure all API calls use HTTPS
+
+### Hosting Platforms
+
+The application can be deployed to:
+- **Vercel** (recommended for Next.js)
+- **Netlify**
+- **Railway**
+- **Heroku**
+- Any platform supporting Node.js
 
 ## Features
 
-- ✅ Generate temporary email addresses
+- ✅ Generate temporary email addresses (@mailsac.com)
 - ✅ Receive and display emails in web interface
 - ✅ Dark theme UI
 - ✅ Multi-tenant support (teams)
 - ✅ Automatic email expiration
-- ✅ Message management (read/unread status)
+- ✅ Real-time message retrieval
 - ✅ Copy email addresses to clipboard
-- ✅ Real-time email reception
-- ✅ Secure webhook endpoints
+- ✅ Professional email API service
+- ✅ No domain setup required
 
-## Next Steps
+## API Reference
 
-1. **Monitoring**: Set up logging and monitoring for production
-2. **Scaling**: Consider rate limiting and resource management
-3. **Features**: Add email templates, filters, or forwarding rules
-4. **Security**: Implement additional security measures for production use
+### Mailsac Endpoints Used
+
+- `GET /api/addresses/{email}/messages` - List messages
+- `GET /api/text/{email}/{messageId}` - Get message text
+- `GET /api/body/{email}/{messageId}` - Get message HTML
+- `GET /api/raw/{email}/{messageId}` - Get raw message
+
+### Rate Limits
+
+Mailsac has generous rate limits for API access. Check your dashboard for current usage and limits.
+
+## Support
+
+- **Mailsac**: Check their documentation and support
+- **Supabase**: Database and authentication issues  
+- **Stack Auth**: Authentication and team management
+- **GitHub Issues**: For application-specific problems
