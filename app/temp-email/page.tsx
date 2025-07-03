@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye, TestTube } from 'lucide-react'
+import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye, TestTube, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Message {
@@ -37,6 +37,8 @@ export default function TempEmailPage() {
   const [loading, setLoading] = useState(false)
   const [refreshing, setRefreshing] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
+  const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
+  const [loadingMessage, setLoadingMessage] = useState(false)
 
   const generateNewEmail = useCallback(async () => {
     try {
@@ -130,6 +132,46 @@ export default function TempEmailPage() {
   const saveEmail = async () => {
     if (!currentEmail) return
     toast.success('Email saved to your account!')
+  }
+
+  const fetchMessageContent = async (messageId: string) => {
+    if (!currentEmail) return null
+    
+    try {
+      setLoadingMessage(true)
+      console.log('Fetching message content for:', messageId)
+      
+      const apiKey = 'k_orTxHGFHe5LwWe2rga6ucez8WroPUD013DEn'
+      const response = await fetch(`https://mailsac.com/api/text/${encodeURIComponent(currentEmail.email)}/${messageId}`, {
+        headers: {
+          'Mailsac-Key': apiKey,
+        },
+      })
+      
+      if (response.ok) {
+        const content = await response.text()
+        console.log('Fetched message content:', content)
+        return content
+      } else {
+        console.error('Failed to fetch message content:', response.status)
+        toast.error('Failed to load message content')
+        return null
+      }
+    } catch (error) {
+      console.error('Error fetching message content:', error)
+      toast.error('Failed to load message content')
+      return null
+    } finally {
+      setLoadingMessage(false)
+    }
+  }
+
+  const openMessage = async (message: Message) => {
+    const content = await fetchMessageContent(message.id.toString())
+    setSelectedMessage({
+      ...message,
+      textBody: content || message.textBody || 'No content available'
+    })
   }
 
   const testEmailAPI = async () => {
@@ -322,7 +364,11 @@ export default function TempEmailPage() {
                   </div>
                 ) : (
                   currentEmail.messages.map((message, index) => (
-                    <Card key={message.id || index} className="border-l-4 border-l-primary">
+                    <Card 
+                      key={message.id || index} 
+                      className="border-l-4 border-l-primary cursor-pointer hover:bg-muted/50 transition-colors"
+                      onClick={() => openMessage(message)}
+                    >
                       <CardContent className="p-4">
                         <div className="space-y-2">
                           <div className="flex items-start justify-between">
@@ -345,6 +391,11 @@ export default function TempEmailPage() {
                               </p>
                             </div>
                           )}
+                          <div className="flex justify-end pt-2">
+                            <p className="text-xs text-muted-foreground hover:text-primary">
+                              Click to view full message →
+                            </p>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -376,6 +427,88 @@ export default function TempEmailPage() {
           )}
         </div>
       </div>
+
+      {/* Message Modal */}
+      {selectedMessage && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="space-y-1">
+                <h2 className="text-xl font-semibold truncate">
+                  {selectedMessage.subject || 'No Subject'}
+                </h2>
+                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                  <span>From: {selectedMessage.from}</span>
+                  <span>{formatDate(selectedMessage.date)}</span>
+                </div>
+              </div>
+              <Button 
+                variant="outline" 
+                size="icon"
+                onClick={() => setSelectedMessage(null)}
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            
+            {/* Modal Content */}
+            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
+              {loadingMessage ? (
+                <div className="flex items-center justify-center py-8">
+                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
+                  <span>Loading message content...</span>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {/* Message Content */}
+                  <div className="bg-muted rounded-lg p-4">
+                    <pre className="whitespace-pre-wrap font-mono text-sm break-words">
+                      {selectedMessage.textBody || selectedMessage.body || 'No content available'}
+                    </pre>
+                  </div>
+                  
+                  {/* Attachments */}
+                  {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
+                    <div className="space-y-2">
+                      <h3 className="font-semibold">Attachments ({selectedMessage.attachments.length})</h3>
+                      <div className="space-y-1">
+                        {selectedMessage.attachments.map((attachment, index) => (
+                          <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
+                            <span className="font-mono">{attachment.filename || `Attachment ${index + 1}`}</span>
+                            {attachment.size && (
+                              <span className="text-muted-foreground">({attachment.size} bytes)</span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+            
+            {/* Modal Footer */}
+            <div className="flex items-center justify-between p-6 border-t">
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  onClick={() => copyToClipboard(selectedMessage.textBody || selectedMessage.body || '')}
+                >
+                  <Copy className="h-4 w-4 mr-2" />
+                  Copy Content
+                </Button>
+              </div>
+              <Button 
+                variant="outline" 
+                onClick={() => setSelectedMessage(null)}
+              >
+                Close
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
