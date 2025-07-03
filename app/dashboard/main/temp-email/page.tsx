@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye } from 'lucide-react'
+import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye, TestTube } from 'lucide-react'
 import { EmailGenerator, TempEmail } from '@/lib/email-generator'
 import { toast } from 'sonner'
 
@@ -121,6 +121,25 @@ export default function TempEmailPage() {
   const saveEmail = async () => {
     if (!currentEmail) return
     toast.success('Email saved to your account!')
+  }
+
+  const testEmailAPI = async () => {
+    if (!currentEmail) return
+    
+    try {
+      console.log('Testing email API for:', currentEmail.email)
+      
+      // Test the Mailsac API directly
+      const { MailsacAPI } = await import('@/lib/mailsac-api')
+      const messages = await MailsacAPI.getMessages(currentEmail.email)
+      
+      console.log('Direct API test result:', messages)
+      toast.success(`API test complete. Found ${messages.length} messages. Check console for details.`)
+    } catch (error) {
+      console.error('API test failed:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`API test failed: ${errorMessage}`)
+    }
   }
 
   const formatTime = (date: Date) => {
@@ -239,6 +258,16 @@ export default function TempEmailPage() {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
+              <Button 
+                variant="outline" 
+                onClick={testEmailAPI}
+                disabled={!currentEmail}
+                className="gap-2"
+                size="sm"
+              >
+                <TestTube className="h-4 w-4" />
+                Test API
+              </Button>
             </div>
 
             <Separator />
@@ -304,12 +333,24 @@ export default function TempEmailPage() {
         </Card>
 
         {/* Footer/Info Section */}
-        <div className="text-center space-y-2 max-w-lg">
-          <p className="text-lg font-semibold text-primary">Privacy meets productivity</p>
-          <p className="text-sm text-muted-foreground">
-            Protect your real email address with temporary, disposable emails that forward to your inbox. 
-            Perfect for signups, testing, and maintaining your digital privacy.
-          </p>
+        <div className="text-center space-y-4 max-w-lg">
+          <div className="space-y-2">
+            <p className="text-lg font-semibold text-primary">Privacy meets productivity</p>
+            <p className="text-sm text-muted-foreground">
+              Protect your real email address with temporary, disposable emails that forward to your inbox. 
+              Perfect for signups, testing, and maintaining your digital privacy.
+            </p>
+          </div>
+          
+          {currentEmail && (
+            <div className="p-4 bg-muted rounded-lg space-y-2">
+              <p className="text-sm font-semibold">📧 Test Your Email</p>
+              <p className="text-xs text-muted-foreground">
+                Send an email to <span className="font-mono">{currentEmail.email}</span> from any email service to test message reception.
+                Use the "Test API" button to debug connectivity issues.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

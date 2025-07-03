@@ -48,7 +48,11 @@ export class MailsacAPI {
       throw new Error('Mailsac API key not configured')
     }
 
-    const response = await fetch(`${MAILSAC_BASE_URL}${endpoint}`, {
+    const url = `${MAILSAC_BASE_URL}${endpoint}`
+    console.log('Making request to:', url)
+    console.log('API Key (first 10 chars):', MAILSAC_API_KEY?.substring(0, 10) + '...')
+
+    const response = await fetch(url, {
       headers: {
         'Mailsac-Key': MAILSAC_API_KEY,
         'Content-Type': 'application/json',
@@ -57,12 +61,18 @@ export class MailsacAPI {
       ...options,
     })
 
+    console.log('Response status:', response.status)
+    console.log('Response headers:', Object.fromEntries(response.headers.entries()))
+
     if (!response.ok) {
       const error = await response.text()
+      console.error('API Error Response:', error)
       throw new Error(`Mailsac API error: ${response.status} - ${error}`)
     }
 
-    return response.json()
+    const data = await response.json()
+    console.log('Response data:', data)
+    return data
   }
 
   static generateRandomEmail(): string {
@@ -78,7 +88,13 @@ export class MailsacAPI {
 
   static async getMessages(email: string): Promise<MailsacMessage[]> {
     try {
-      const data = await this.makeRequest(`/api/addresses/${encodeURIComponent(email)}/messages`)
+      console.log('Fetching messages for email:', email)
+      const endpoint = `/api/addresses/${encodeURIComponent(email)}/messages`
+      console.log('API endpoint:', endpoint)
+      
+      const data = await this.makeRequest(endpoint)
+      console.log('Messages response:', data)
+      
       return data || []
     } catch (error) {
       console.error('Failed to get messages:', error)
