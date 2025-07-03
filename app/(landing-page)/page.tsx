@@ -1,26 +1,10 @@
 import { FeatureGrid } from "@/components/features";
 import { Hero } from "@/components/hero";
 import { PricingGrid } from "@/components/pricing";
-import { stackServerApp } from "@/stack";
 import { GitHubLogoIcon } from "@radix-ui/react-icons";
 import { ComponentIcon, Users } from "lucide-react";
 
-export default async function IndexPage() {
-  const project = await stackServerApp.getProject();
-  if (!project.config.clientTeamCreationEnabled) {
-    return (
-      <div className="w-full min-h-96 flex items-center justify-center">
-        <div className="max-w-xl gap-4">
-          <p className="font-bold text-xl">Setup Required</p>
-          <p className="">
-            {
-              "To start using this project, please enable client-side team creation in the Stack Auth dashboard (Project > Team Settings). This message will disappear once the feature is enabled."
-            }
-          </p>
-        </div>
-      </div>
-    );
-  }
+export default function IndexPage() {
 
   return (
     <>
@@ -30,7 +14,7 @@ export default async function IndexPage() {
         title="Rowdy Mail"
         subtitle="Professional temporary email service for testing, verification, and privacy. Generate disposable emails instantly with our powerful API."
         primaryCtaText="Get Started"
-        primaryCtaLink={stackServerApp.urls.signUp}
+        primaryCtaLink="/temp-email"
         secondaryCtaText="GitHub"
         secondaryCtaLink="https://github.com/rowdy-raedon/multi-tenant-starter-template"
         credits={
@@ -132,7 +116,7 @@ export default async function IndexPage() {
               "No credit card required",
             ],
             buttonText: "Get Started",
-            buttonHref: stackServerApp.urls.signUp,
+            buttonHref: "/temp-email",
           },
           {
             title: "Pro",
@@ -147,7 +131,7 @@ export default async function IndexPage() {
             ],
             buttonText: "Upgrade to Pro",
             isPopular: true,
-            buttonHref: stackServerApp.urls.signUp,
+            buttonHref: "/temp-email",
           },
           {
             title: "Enterprise",
@@ -161,7 +145,7 @@ export default async function IndexPage() {
               "Custom integrations",
             ],
             buttonText: "Contact Sales",
-            buttonHref: stackServerApp.urls.signUp,
+            buttonHref: "/temp-email",
           },
         ]}
       />
