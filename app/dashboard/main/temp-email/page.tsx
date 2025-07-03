@@ -347,7 +347,7 @@ export default function TempEmailPage() {
               <p className="text-sm font-semibold">📧 Test Your Email</p>
               <p className="text-xs text-muted-foreground">
                 Send an email to <span className="font-mono">{currentEmail.email}</span> from any email service to test message reception.
-                Use the "Test API" button to debug connectivity issues.
+                Use the &quot;Test API&quot; button to debug connectivity issues.
               </p>
             </div>
           )}
