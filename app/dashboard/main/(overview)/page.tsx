@@ -8,8 +8,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Graph } from "./graph";
-
 export default function DashboardPage() {
   return (
     <>
@@ -40,9 +38,9 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">1,234</div>
+                <div className="text-2xl font-bold">0</div>
                 <p className="text-xs text-muted-foreground">
-                  +20.1% from last month
+                  Create your first temporary email
                 </p>
               </CardContent>
             </Card>
@@ -66,7 +64,7 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">23</div>
+                <div className="text-2xl font-bold">0</div>
                 <p className="text-xs text-muted-foreground">
                   Currently receiving emails
                 </p>
@@ -89,16 +87,16 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">567</div>
+                <div className="text-2xl font-bold">0</div>
                 <p className="text-xs text-muted-foreground">
-                  +89 this week
+                  No messages yet
                 </p>
               </CardContent>
             </Card>
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">
-                  API Requests
+                  API Usage
                 </CardTitle>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -114,34 +112,76 @@ export default function DashboardPage() {
                 </svg>
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">2,847</div>
+                <div className="text-2xl font-bold">0</div>
                 <p className="text-xs text-muted-foreground">
-                  +201 since yesterday
+                  API calls made
                 </p>
               </CardContent>
             </Card>
           </div>
+          
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
             <Card className="col-span-4">
               <CardHeader>
-                <CardTitle>Email Usage Analytics</CardTitle>
+                <CardTitle>Quick Start</CardTitle>
                 <CardDescription>
-                  Track your temporary email usage over time
+                  Get started with Rowdy Mail temporary email service
                 </CardDescription>
               </CardHeader>
-              <CardContent className="pl-2">
-                <Graph />
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center p-4 border rounded-lg">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold">1</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Create Temporary Email</h3>
+                      <p className="text-sm text-muted-foreground">Generate a disposable email address using Mailsac</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center p-4 border rounded-lg">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold">2</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Use for Testing</h3>
+                      <p className="text-sm text-muted-foreground">Use the email for signups, verification, or testing</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center p-4 border rounded-lg">
+                    <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mr-4">
+                      <span className="text-blue-600 dark:text-blue-400 font-semibold">3</span>
+                    </div>
+                    <div>
+                      <h3 className="font-medium">Receive Messages</h3>
+                      <p className="text-sm text-muted-foreground">View messages in real-time through the dashboard</p>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card className="col-span-3">
               <CardHeader>
-                <CardTitle>Recent Email Activity</CardTitle>
+                <CardTitle>Welcome to Rowdy Mail</CardTitle>
                 <CardDescription>
-                  Latest temporary emails and messages received.
+                  Your temporary email service is ready to use
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <RecentSales />
+                <div className="space-y-4">
+                  <div className="text-center p-6">
+                    <div className="w-16 h-16 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4">
+                      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-8 w-8 text-blue-600 dark:text-blue-400">
+                        <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/>
+                        <polyline points="22,6 12,13 2,6"/>
+                      </svg>
+                    </div>
+                    <h3 className="font-medium mb-2">Start Creating Emails</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Navigate to the Temp Email section to create your first disposable email address.
+                    </p>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>
