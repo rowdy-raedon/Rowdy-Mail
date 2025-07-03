@@ -47,7 +47,31 @@ const navigationItems: SidebarItem[] = [
 ];
 
 export default function Layout(props: { children: React.ReactNode }) {
-  const user = useUser({ or: 'redirect' });
+  const user = useUser();
+
+  // Show loading state while authentication is being resolved
+  if (user === undefined) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show simple unauthorized message instead of redirecting
+  if (user === null) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
+          <p className="text-muted-foreground">Please sign in to access this page.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <SidebarLayout 
@@ -62,7 +86,7 @@ export default function Layout(props: { children: React.ReactNode }) {
             </svg>
           </div>
           <div>
-            <h1 className="text-sm font-semibold">{user.displayName || user.primaryEmail}</h1>
+            <h1 className="text-sm font-semibold">{user?.displayName || user?.primaryEmail || 'User'}</h1>
             <p className="text-xs text-muted-foreground">Personal Account</p>
           </div>
         </div>
