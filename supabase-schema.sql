@@ -5,7 +5,6 @@ CREATE TABLE temp_emails (
   login VARCHAR(255) NOT NULL,
   domain VARCHAR(255) NOT NULL,
   user_id VARCHAR(255),
-  team_id VARCHAR(255),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE,
   is_active BOOLEAN DEFAULT TRUE,
@@ -27,7 +26,6 @@ CREATE TABLE messages (
 
 -- Create indexes for better performance
 CREATE INDEX idx_temp_emails_user_id ON temp_emails(user_id);
-CREATE INDEX idx_temp_emails_team_id ON temp_emails(team_id);
 CREATE INDEX idx_temp_emails_active ON temp_emails(is_active);
 CREATE INDEX idx_messages_temp_email_id ON messages(temp_email_id);
 CREATE INDEX idx_messages_received_at ON messages(received_at);

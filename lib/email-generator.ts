@@ -3,7 +3,6 @@ import { MailsacAPI } from './mailsac-api'
 
 export interface TempEmailOptions {
   userId?: string
-  teamId?: string
   expiresIn?: number // hours
   customLogin?: string
 }
@@ -14,7 +13,6 @@ export interface TempEmail {
   login: string
   domain: string
   userId: string | null
-  teamId: string | null
   createdAt: string
   expiresAt: string | null
   isActive: boolean
@@ -41,7 +39,6 @@ export class EmailGenerator {
         login,
         domain,
         user_id: options.userId || null,
-        team_id: options.teamId || null,
         expires_at: expiresAt,
       })
       .select()
@@ -57,7 +54,6 @@ export class EmailGenerator {
       login: data.login,
       domain: data.domain,
       userId: data.user_id,
-      teamId: data.team_id,
       createdAt: data.created_at,
       expiresAt: data.expires_at,
       isActive: data.is_active,
@@ -83,7 +79,6 @@ export class EmailGenerator {
       login: item.login,
       domain: item.domain,
       userId: item.user_id,
-      teamId: item.team_id,
       createdAt: item.created_at,
       expiresAt: item.expires_at,
       isActive: item.is_active,

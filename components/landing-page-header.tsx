@@ -46,7 +46,7 @@ function AuthButtonsInner() {
   if (user) {
     return (
       <Link
-        href="/dashboard"
+        href="/dashboard/main"
         className={buttonVariants({ variant: "default" })}
       >
         Dashboard
