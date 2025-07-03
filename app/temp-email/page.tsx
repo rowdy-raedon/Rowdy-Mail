@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
-import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye, TestTube, X } from 'lucide-react'
+import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye, X } from 'lucide-react'
 import { toast } from 'sonner'
 
 interface Message {
@@ -174,38 +174,6 @@ export default function TempEmailPage() {
     })
   }
 
-  const testEmailAPI = async () => {
-    if (!currentEmail) return
-    
-    try {
-      console.log('Testing email API for:', currentEmail.email)
-      
-      // Direct API test
-      const apiKey = 'k_orTxHGFHe5LwWe2rga6ucez8WroPUD013DEn'
-      const response = await fetch(`https://mailsac.com/api/addresses/${encodeURIComponent(currentEmail.email)}/messages`, {
-        headers: {
-          'Mailsac-Key': apiKey,
-        },
-      })
-      
-      console.log('API Response Status:', response.status)
-      console.log('API Response Headers:', Object.fromEntries(response.headers.entries()))
-      
-      if (response.ok) {
-        const data = await response.json()
-        console.log('API Response Data:', data)
-        toast.success(`API test successful! Found ${data.length} messages. Check console for details.`)
-      } else {
-        const errorText = await response.text()
-        console.error('API Error:', errorText)
-        toast.error(`API test failed: ${response.status} - ${errorText}`)
-      }
-    } catch (error) {
-      console.error('API test failed:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      toast.error(`API test failed: ${errorMessage}`)
-    }
-  }
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString('en-US', { 
@@ -323,16 +291,6 @@ export default function TempEmailPage() {
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
                 Refresh
               </Button>
-              <Button 
-                variant="outline" 
-                onClick={testEmailAPI}
-                disabled={!currentEmail}
-                className="gap-2"
-                size="sm"
-              >
-                <TestTube className="h-4 w-4" />
-                Test API
-              </Button>
             </div>
 
             <Separator />
@@ -416,15 +374,6 @@ export default function TempEmailPage() {
             </p>
           </div>
           
-          {currentEmail && (
-            <div className="p-4 bg-muted rounded-lg space-y-2">
-              <p className="text-sm font-semibold">📧 Test Your Email</p>
-              <p className="text-xs text-muted-foreground">
-                Send an email to <span className="font-mono">{currentEmail.email}</span> from any email service to test message reception.
-                Use the &quot;Test API&quot; button to debug connectivity issues.
-              </p>
-            </div>
-          )}
         </div>
       </div>
 
