@@ -38,7 +38,7 @@ export default function TempEmailPage() {
   const [refreshing, setRefreshing] = useState(false)
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
 
-  const generateNewEmail = async () => {
+  const generateNewEmail = useCallback(async () => {
     try {
       setLoading(true)
       console.log('Generating email for user:', user.id)
@@ -79,11 +79,12 @@ export default function TempEmailPage() {
       }
     } catch (error) {
       console.error('Complete failure to create temp email:', error)
-      toast.error(`Failed to generate email: ${error.message}`)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
+      toast.error(`Failed to generate email: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
-  }
+  }, [user.id])
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -94,7 +95,7 @@ export default function TempEmailPage() {
     }
   }
 
-  const refreshMessages = async () => {
+  const refreshMessages = useCallback(async () => {
     if (!currentEmail) return
     try {
       setRefreshing(true)
@@ -115,7 +116,7 @@ export default function TempEmailPage() {
     } finally {
       setRefreshing(false)
     }
-  }
+  }, [currentEmail])
 
   const saveEmail = async () => {
     if (!currentEmail) return
@@ -144,7 +145,7 @@ export default function TempEmailPage() {
     if (!currentEmail) {
       generateNewEmail()
     }
-  }, [])
+  }, [currentEmail, generateNewEmail])
 
   // Auto-refresh messages every 10 seconds
   useEffect(() => {
@@ -152,7 +153,7 @@ export default function TempEmailPage() {
       const interval = setInterval(refreshMessages, 10000)
       return () => clearInterval(interval)
     }
-  }, [currentEmail])
+  }, [currentEmail, refreshMessages])
 
   return (
     <div className="min-h-screen bg-background">
