@@ -1,7 +1,5 @@
-import { StackProvider, StackTheme } from "@stackframe/stack";
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
-import { stackServerApp } from "../stack";
 import "./globals.css";
 import { Provider } from "./provider";
 
@@ -9,7 +7,7 @@ const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
   title: "RowdyMail - Temporary Email Service",
-  description: "Generate temporary email addresses with your custom domain. Perfect for testing, signups, and privacy protection.",
+  description: "Generate temporary email addresses with Mailsac. Perfect for testing, signups, and privacy protection.",
 };
 
 export default function RootLayout({
@@ -21,9 +19,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <Provider>
-          <StackProvider app={stackServerApp}>
-            <StackTheme>{children}</StackTheme>
-          </StackProvider>
+          {children}
         </Provider>
       </body>
     </html>
