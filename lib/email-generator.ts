@@ -1,71 +1,48 @@
-import { randomBytes } from 'crypto'
 import { supabase } from './supabase'
-import { ImprovMXAPI } from './improvemx-api'
+import { MailsacAPI } from './mailsac-api'
 
 export interface TempEmailOptions {
   userId?: string
   teamId?: string
   expiresIn?: number // hours
-  prefix?: string
+  customLogin?: string
 }
 
 export interface TempEmail {
   id: string
   email: string
+  login: string
+  domain: string
   userId: string | null
   teamId: string | null
   createdAt: string
   expiresAt: string | null
   isActive: boolean
   messagesCount: number
-  improvmxAliasId?: number
 }
 
-const DOMAIN = 'rowdymail.pro'
-
 export class EmailGenerator {
-  static generateRandomId(length: number = 8): string {
-    const chars = 'abcdefghijklmnopqrstuvwxyz0123456789'
-    return Array.from(randomBytes(length))
-      .map(byte => chars[byte % chars.length])
-      .join('')
-  }
-
-  static generateEmailAddress(prefix?: string): string {
-    const randomId = this.generateRandomId()
-    const localPart = prefix ? `${prefix}-${randomId}` : randomId
-    return `${localPart}@${DOMAIN}`
-  }
-
   static async createTempEmail(options: TempEmailOptions = {}): Promise<TempEmail> {
-    const email = this.generateEmailAddress(options.prefix)
     const expiresAt = options.expiresIn 
       ? new Date(Date.now() + options.expiresIn * 60 * 60 * 1000).toISOString()
       : null
 
-    let improvmxAliasId: number | undefined
+    // Generate email using Mailsac
+    const email = options.customLogin 
+      ? MailsacAPI.generateCustomEmail(options.customLogin)
+      : MailsacAPI.generateRandomEmail()
 
-    try {
-      // Create ImprovMX alias to forward to webhook
-      const webhookUrl = `${process.env.NEXT_PUBLIC_APP_URL}/api/webhook/improvmx`
-      const alias = await ImprovMXAPI.createAlias(
-        email.split('@')[0], // local part only
-        webhookUrl
-      )
-      improvmxAliasId = alias.id
-    } catch (error) {
-      console.warn('Failed to create ImprovMX alias:', error)
-      // Continue without alias - emails will still work via catch-all
-    }
+    const { login, domain } = MailsacAPI.parseEmail(email)
 
     const { data, error } = await supabase
       .from('temp_emails')
       .insert({
         email,
+        login,
+        domain,
         user_id: options.userId || null,
         team_id: options.teamId || null,
         expires_at: expiresAt,
-        improvmx_alias_id: improvmxAliasId,
       })
       .select()
       .single()
@@ -77,13 +54,14 @@ export class EmailGenerator {
     return {
       id: data.id,
       email: data.email,
+      login: data.login,
+      domain: data.domain,
       userId: data.user_id,
       teamId: data.team_id,
       createdAt: data.created_at,
       expiresAt: data.expires_at,
       isActive: data.is_active,
       messagesCount: data.messages_count,
-      improvmxAliasId: data.improvmx_alias_id,
     }
   }
 
@@ -102,6 +80,8 @@ export class EmailGenerator {
     return data.map(item => ({
       id: item.id,
       email: item.email,
+      login: item.login,
+      domain: item.domain,
       userId: item.user_id,
       teamId: item.team_id,
       createdAt: item.created_at,
@@ -112,23 +92,6 @@ export class EmailGenerator {
   }
 
   static async deactivateEmail(emailId: string, userId: string): Promise<void> {
-    // First get the email to check for ImprovMX alias
-    const { data: email } = await supabase
-      .from('temp_emails')
-      .select('improvmx_alias_id')
-      .eq('id', emailId)
-      .eq('user_id', userId)
-      .single()
-
-    // Clean up ImprovMX alias if it exists
-    if (email?.improvmx_alias_id) {
-      try {
-        await ImprovMXAPI.deleteAlias(email.improvmx_alias_id)
-      } catch (error) {
-        console.warn('Failed to delete ImprovMX alias:', error)
-      }
-    }
-
     const { error } = await supabase
       .from('temp_emails')
       .update({ is_active: false })
@@ -170,6 +133,80 @@ export class EmailGenerator {
       totalEmails,
       activeEmails,
       totalMessages,
+    }
+  }
+
+  static async fetchMessages(email: TempEmail): Promise<any[]> {
+    try {
+      const messages = await MailsacAPI.getMessages(email.email)
+      
+      // Transform Mailsac messages to our format
+      return messages.map(msg => ({
+        id: msg._id,
+        from: msg.from[0]?.address || '',
+        subject: msg.subject,
+        date: msg.received,
+        body: '', // Will be fetched separately if needed
+        textBody: '', // Will be fetched separately if needed
+        htmlBody: '', // Will be fetched separately if needed
+        attachments: msg.attachments || [],
+      }))
+    } catch (error) {
+      console.error('Failed to fetch messages:', error)
+      return []
+    }
+  }
+
+  static async fetchMessage(email: TempEmail, messageId: string): Promise<any> {
+    try {
+      const message = await MailsacAPI.getMessage(email.email, messageId)
+      if (!message) return null
+
+      const htmlContent = await MailsacAPI.getMessageHTML(email.email, messageId)
+      
+      return {
+        id: message._id,
+        from: message.from,
+        subject: message.subject,
+        date: message.received,
+        body: message.text || '',
+        textBody: message.text || '',
+        htmlBody: htmlContent || '',
+        headers: message.headers,
+      }
+    } catch (error) {
+      console.error('Failed to fetch message:', error)
+      return null
+    }
+  }
+
+  static async waitForMessages(email: TempEmail, timeout: number = 30000): Promise<any[]> {
+    try {
+      const messages = await MailsacAPI.waitForMessages(email.email, timeout)
+      
+      // Transform Mailsac messages to our format
+      return messages.map(msg => ({
+        id: msg._id,
+        from: msg.from[0]?.address || '',
+        subject: msg.subject,
+        date: msg.received,
+        body: '', // Will be fetched separately if needed
+        textBody: '', // Will be fetched separately if needed
+        htmlBody: '', // Will be fetched separately if needed
+        attachments: msg.attachments || [],
+      }))
+    } catch (error) {
+      console.error('Failed to wait for messages:', error)
+      return []
+    }
+  }
+
+  static async checkEmailExists(email: string): Promise<boolean> {
+    try {
+      return await MailsacAPI.checkInboxExists(email)
+    } catch (error) {
+      console.error('Failed to check email exists:', error)
+      return false
     }
   }
 }

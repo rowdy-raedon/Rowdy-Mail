@@ -11,11 +11,25 @@ import { Separator } from '@/components/ui/separator'
 import { Badge } from '@/components/ui/badge'
 import { Copy, Mail, Plus, Trash2, RefreshCw, Clock, MessageCircle } from 'lucide-react'
 import { EmailGenerator, TempEmail } from '@/lib/email-generator'
-import { MessageHandler, Message } from '@/lib/message-handler'
 import { toast } from 'sonner'
 
+interface OneSecMessage {
+  id: number
+  from: string
+  subject: string
+  date: string
+  body?: string
+  textBody?: string
+  htmlBody?: string
+  attachments: Array<{
+    filename: string
+    contentType: string
+    size: number
+  }>
+}
+
 interface EmailWithMessages extends TempEmail {
-  messages: Message[]
+  messages: OneSecMessage[]
 }
 
 export default function TempEmailPage() {
@@ -25,7 +39,7 @@ export default function TempEmailPage() {
   const [selectedEmail, setSelectedEmail] = useState<EmailWithMessages | null>(null)
   const [loading, setLoading] = useState(true)
   const [creating, setCreating] = useState(false)
-  const [prefix, setPrefix] = useState('')
+  const [customLogin, setCustomLogin] = useState('')
   const [expiresIn, setExpiresIn] = useState(24)
 
   const loadTempEmails = useCallback(async () => {
@@ -34,7 +48,7 @@ export default function TempEmailPage() {
       const emails = await EmailGenerator.getTempEmails(user.id)
       const emailsWithMessages = await Promise.all(
         emails.map(async (email) => {
-          const messages = await MessageHandler.getMessages(email.id)
+          const messages = await EmailGenerator.fetchMessages(email)
           return { ...email, messages }
         })
       )
@@ -53,12 +67,12 @@ export default function TempEmailPage() {
       const tempEmail = await EmailGenerator.createTempEmail({
         userId: user.id,
         teamId: params.teamId,
-        prefix: prefix || undefined,
+        customLogin: customLogin || undefined,
         expiresIn: expiresIn > 0 ? expiresIn : undefined,
       })
       const emailWithMessages = { ...tempEmail, messages: [] }
       setTempEmails(prev => [emailWithMessages, ...prev])
-      setPrefix('')
+      setCustomLogin('')
       toast.success('Temporary email created!')
     } catch (error) {
       console.error('Failed to create temp email:', error)
@@ -91,25 +105,17 @@ export default function TempEmailPage() {
     }
   }
 
-  const markAsRead = async (messageId: string) => {
+  const refreshMessages = async (email: EmailWithMessages) => {
     try {
-      await MessageHandler.markAsRead(messageId)
-      setTempEmails(prev => prev.map(email => ({
-        ...email,
-        messages: email.messages.map(msg => 
-          msg.id === messageId ? { ...msg, isRead: true } : msg
-        )
-      })))
-      if (selectedEmail) {
-        setSelectedEmail(prev => prev ? {
-          ...prev,
-          messages: prev.messages.map(msg => 
-            msg.id === messageId ? { ...msg, isRead: true } : msg
-          )
-        } : null)
+      const messages = await EmailGenerator.fetchMessages(email)
+      setTempEmails(prev => prev.map(e => 
+        e.id === email.id ? { ...e, messages } : e
+      ))
+      if (selectedEmail?.id === email.id) {
+        setSelectedEmail({ ...email, messages })
       }
     } catch (error) {
-      console.error('Failed to mark as read:', error)
+      console.error('Failed to refresh messages:', error)
     }
   }
 
@@ -151,18 +157,18 @@ export default function TempEmailPage() {
             Create New Temporary Email
           </CardTitle>
           <CardDescription>
-            Generate a new temporary email address using your custom domain.
+            Generate a new temporary email address using the Mailsac service.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="prefix">Prefix (optional)</Label>
+              <Label htmlFor="login">Custom Login (optional)</Label>
               <Input
-                id="prefix"
-                placeholder="e.g., test, signup"
-                value={prefix}
-                onChange={(e) => setPrefix(e.target.value)}
+                id="login"
+                placeholder="e.g., mytest, signup123"
+                value={customLogin}
+                onChange={(e) => setCustomLogin(e.target.value)}
               />
             </div>
             <div className="space-y-2">
@@ -303,29 +309,37 @@ export default function TempEmailPage() {
             ) : (
               <div className="space-y-3">
                 {selectedEmail.messages.map((message) => (
-                  <Card key={message.id} className={`${!message.isRead ? 'border-primary/50' : ''}`}>
+                  <Card key={message.id}>
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex-1 min-w-0">
                           <CardTitle className="text-base truncate">{message.subject}</CardTitle>
                           <CardDescription className="text-xs">
-                            From: {message.fromEmail} • {formatDate(message.receivedAt)}
+                            From: {message.from} • {formatDate(message.date)}
                           </CardDescription>
                         </div>
-                        {!message.isRead && (
-                          <Badge variant="default" className="ml-2">New</Badge>
-                        )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            refreshMessages(selectedEmail!)
+                          }}
+                        >
+                          <RefreshCw className="h-3 w-3" />
+                        </Button>
                       </div>
                     </CardHeader>
                     <CardContent className="pt-0">
-                      <div 
-                        className="prose prose-sm dark:prose-invert max-w-none"
-                        onClick={() => !message.isRead && markAsRead(message.id)}
-                      >
-                        {message.bodyHtml ? (
-                          <div dangerouslySetInnerHTML={{ __html: message.bodyHtml }} />
+                      <div className="prose prose-sm dark:prose-invert max-w-none">
+                        {message.htmlBody ? (
+                          <div dangerouslySetInnerHTML={{ __html: message.htmlBody }} />
+                        ) : message.textBody ? (
+                          <p className="whitespace-pre-wrap">{message.textBody}</p>
+                        ) : message.body ? (
+                          <p className="whitespace-pre-wrap">{message.body}</p>
                         ) : (
-                          <p className="whitespace-pre-wrap">{message.bodyText}</p>
+                          <p className="text-muted-foreground">No content</p>
                         )}
                       </div>
                       {message.attachments && message.attachments.length > 0 && (

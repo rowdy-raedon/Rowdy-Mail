@@ -2,13 +2,14 @@
 CREATE TABLE temp_emails (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   email VARCHAR(255) NOT NULL UNIQUE,
+  login VARCHAR(255) NOT NULL,
+  domain VARCHAR(255) NOT NULL,
   user_id VARCHAR(255),
   team_id VARCHAR(255),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   expires_at TIMESTAMP WITH TIME ZONE,
   is_active BOOLEAN DEFAULT TRUE,
-  messages_count INTEGER DEFAULT 0,
-  improvmx_alias_id INTEGER
+  messages_count INTEGER DEFAULT 0
 );
 
 -- Create messages table
