@@ -2,7 +2,7 @@
 
 import SidebarLayout, { SidebarItem } from "@/components/sidebar-layout";
 import { SelectedTeamSwitcher, useUser } from "@stackframe/stack";
-import { BadgePercent, BarChart4, Columns3, Globe, Locate, Mail, Settings2, ShoppingBag, ShoppingCart, Users } from "lucide-react";
+import { Globe, Mail, Settings2, Zap } from "lucide-react";
 import { useParams, useRouter } from "next/navigation";
 
 const navigationItems: SidebarItem[] = [
@@ -14,7 +14,7 @@ const navigationItems: SidebarItem[] = [
   },
   {
     type: 'label',
-    name: 'Management',
+    name: 'Email Services',
   },
   {
     name: "Temp Email",
@@ -23,49 +23,16 @@ const navigationItems: SidebarItem[] = [
     type: "item",
   },
   {
-    name: "Products",
-    href: "/products",
-    icon: ShoppingBag,
-    type: "item",
-  },
-  {
-    name: "People",
-    href: "/people",
-    icon: Users,
-    type: "item",
-  },
-  {
-    name: "Segments",
-    href: "/segments",
-    icon: Columns3,
-    type: "item",
-  },
-  {
-    name: "Regions",
-    href: "/regions",
-    icon: Locate,
-    type: "item",
-  },
-  {
-    type: 'label',
-    name: 'Monetization',
-  },
-  {
-    name: "Revenue",
-    href: "/revenue",
-    icon: BarChart4,
-    type: "item",
-  },
-  {
-    name: "Orders",
-    href: "/orders",
-    icon: ShoppingCart,
-    type: "item",
-  },
-  {
-    name: "Discounts",
-    href: "/discounts",
-    icon: BadgePercent,
+    name: (
+      <div className="flex items-center justify-between w-full">
+        <span>Real Emails</span>
+        <span className="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full">
+          Coming Soon
+        </span>
+      </div>
+    ),
+    href: "/real-emails",
+    icon: Zap,
     type: "item",
   },
   {
