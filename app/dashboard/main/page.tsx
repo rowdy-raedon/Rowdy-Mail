@@ -1,4 +1,5 @@
-import { Metadata } from "next";
+"use client";
+
 import {
   Card,
   CardContent,
@@ -6,11 +7,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-
-export const metadata: Metadata = {
-  title: "Rowdy Mail Dashboard",
-  description: "Temporary email service dashboard - manage your disposable emails.",
-};
 
 export default function DashboardPage() {
   return (

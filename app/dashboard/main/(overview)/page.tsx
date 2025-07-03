@@ -1,4 +1,4 @@
-import { Metadata } from "next";
+"use client";
 
 import { RecentSales } from "./recent-sales";
 import {
@@ -9,11 +9,6 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Graph } from "./graph";
-
-export const metadata: Metadata = {
-  title: "Rowdy Mail Dashboard",
-  description: "Temporary email service dashboard - manage your disposable emails.",
-};
 
 export default function DashboardPage() {
   return (
