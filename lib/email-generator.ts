@@ -21,6 +21,8 @@ export interface TempEmail {
 
 export class EmailGenerator {
   static async createTempEmail(options: TempEmailOptions = {}): Promise<TempEmail> {
+    console.log('Creating temp email with options:', options)
+    
     const expiresAt = options.expiresIn 
       ? new Date(Date.now() + options.expiresIn * 60 * 60 * 1000).toISOString()
       : null
@@ -30,23 +32,32 @@ export class EmailGenerator {
       ? MailsacAPI.generateCustomEmail(options.customLogin)
       : MailsacAPI.generateRandomEmail()
 
+    console.log('Generated email address:', email)
+    
     const { login, domain } = MailsacAPI.parseEmail(email)
+    console.log('Parsed email - login:', login, 'domain:', domain)
+
+    const insertData = {
+      email,
+      login,
+      domain,
+      user_id: options.userId || null,
+      expires_at: expiresAt,
+    }
+    console.log('Inserting data:', insertData)
 
     const { data, error } = await supabase
       .from('temp_emails')
-      .insert({
-        email,
-        login,
-        domain,
-        user_id: options.userId || null,
-        expires_at: expiresAt,
-      })
+      .insert(insertData)
       .select()
       .single()
 
     if (error) {
+      console.error('Supabase error:', error)
       throw new Error(`Failed to create temp email: ${error.message}`)
     }
+    
+    console.log('Database response:', data)
 
     return {
       id: data.id,

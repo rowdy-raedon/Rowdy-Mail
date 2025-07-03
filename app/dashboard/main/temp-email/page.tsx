@@ -41,16 +41,45 @@ export default function TempEmailPage() {
   const generateNewEmail = async () => {
     try {
       setLoading(true)
-      const tempEmail = await EmailGenerator.createTempEmail({
-        userId: user.id,
-      })
-      const emailWithMessages = { ...tempEmail, messages: [] }
-      setCurrentEmail(emailWithMessages)
-      setLastRefreshed(new Date())
-      toast.success('New temporary email generated!')
+      console.log('Generating email for user:', user.id)
+      
+      // Try database approach first
+      try {
+        const tempEmail = await EmailGenerator.createTempEmail({
+          userId: user.id,
+        })
+        
+        console.log('Generated email:', tempEmail)
+        const emailWithMessages = { ...tempEmail, messages: [] }
+        setCurrentEmail(emailWithMessages)
+        setLastRefreshed(new Date())
+        toast.success('New temporary email generated!')
+        return
+      } catch (dbError) {
+        console.error('Database creation failed, using fallback:', dbError)
+        
+        // Fallback: create email without database storage for testing
+        const email = Math.random().toString(36).substring(2, 15) + '@mailsac.com'
+        const fallbackEmail = {
+          id: 'temp-' + Date.now(),
+          email: email,
+          login: email.split('@')[0],
+          domain: 'mailsac.com',
+          userId: user.id,
+          createdAt: new Date().toISOString(),
+          expiresAt: null,
+          isActive: true,
+          messagesCount: 0,
+          messages: []
+        }
+        
+        setCurrentEmail(fallbackEmail)
+        setLastRefreshed(new Date())
+        toast.success('Temporary email generated (demo mode)!')
+      }
     } catch (error) {
-      console.error('Failed to create temp email:', error)
-      toast.error('Failed to generate email')
+      console.error('Complete failure to create temp email:', error)
+      toast.error(`Failed to generate email: ${error.message}`)
     } finally {
       setLoading(false)
     }
@@ -69,9 +98,17 @@ export default function TempEmailPage() {
     if (!currentEmail) return
     try {
       setRefreshing(true)
+      console.log('Refreshing messages for:', currentEmail.email)
+      
       const messages = await EmailGenerator.fetchMessages(currentEmail)
+      console.log('Fetched messages:', messages)
+      
       setCurrentEmail({ ...currentEmail, messages })
       setLastRefreshed(new Date())
+      
+      if (messages.length > 0) {
+        toast.success(`Found ${messages.length} message(s)!`)
+      }
     } catch (error) {
       console.error('Failed to refresh messages:', error)
       toast.error('Failed to refresh messages')
