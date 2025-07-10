@@ -2,35 +2,15 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
-import { Badge } from '@/components/ui/badge'
-import { Copy, Mail, RefreshCw, Download, Shuffle, Save, Eye, X } from 'lucide-react'
+import { Download } from 'lucide-react'
 import { toast } from 'sonner'
-
-interface Message {
-  id: number | string
-  from: string
-  subject: string
-  date: string
-  body?: string
-  textBody?: string
-  htmlBody?: string
-  attachments: any[]
-}
-
-interface TempEmail {
-  id: string
-  email: string
-  login: string
-  domain: string
-  userId: string
-  createdAt: string
-  expiresAt: string | null
-  isActive: boolean
-  messagesCount: number
-  messages: Message[]
-}
+import { TempEmail, Message, MailsacApiMessage } from '@/types/email'
+import { EmailDisplay } from '@/components/email/EmailDisplay'
+import { EmailActions } from '@/components/email/EmailActions'
+import { MessageList } from '@/components/email/MessageList'
+import { MessageModal } from '@/components/email/MessageModal'
+import { useEmailApi } from '@/hooks/useApi'
 
 export default function TempEmailPage() {
   const [currentEmail, setCurrentEmail] = useState<TempEmail | null>(null)
@@ -39,44 +19,48 @@ export default function TempEmailPage() {
   const [lastRefreshed, setLastRefreshed] = useState<Date | null>(null)
   const [selectedMessage, setSelectedMessage] = useState<Message | null>(null)
   const [loadingMessage, setLoadingMessage] = useState(false)
+  const [isVisible, setIsVisible] = useState(true)
+  const [isOnline, setIsOnline] = useState(typeof navigator !== 'undefined' ? navigator.onLine : true)
+
+  const emailApi = useEmailApi()
 
   const generateNewEmail = useCallback(async () => {
     try {
       setLoading(true)
       console.log('Generating new email...')
       
-      // Generate email address
-      const email = Math.random().toString(36).substring(2, 15) + '@mailsac.com'
-      const newEmail: TempEmail = {
-        id: 'temp-' + Date.now(),
-        email: email,
-        login: email.split('@')[0],
-        domain: 'mailsac.com',
-        userId: 'demo-user',
-        createdAt: new Date().toISOString(),
-        expiresAt: null,
-        isActive: true,
-        messagesCount: 0,
-        messages: []
+      const data = await emailApi.generateEmail()
+      
+      if (data) {
+        const newEmail: TempEmail = {
+          id: 'temp-' + Date.now(),
+          email: data.email,
+          login: data.email.split('@')[0],
+          domain: 'mailsac.com',
+          userId: 'demo-user',
+          createdAt: new Date().toISOString(),
+          expiresAt: null,
+          isActive: true,
+          messagesCount: 0,
+          messages: []
+        }
+        
+        setCurrentEmail(newEmail)
+        setLastRefreshed(new Date())
+        toast.success('Temporary email generated!')
       }
-      
-      setCurrentEmail(newEmail)
-      setLastRefreshed(new Date())
-      toast.success('Temporary email generated!')
-      
     } catch (error) {
       console.error('Failed to create temp email:', error)
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error'
-      toast.error(`Failed to generate email: ${errorMessage}`)
+      // Error toast is already handled by useApi hook
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [emailApi])
 
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text)
-      toast.success('Email copied to clipboard!')
+      toast.success('Copied to clipboard!')
     } catch (error) {
       toast.error('Failed to copy to clipboard')
     }
@@ -88,21 +72,14 @@ export default function TempEmailPage() {
       setRefreshing(true)
       console.log('Refreshing messages for:', currentEmail.email)
       
-      // Simple fetch to Mailsac API
-      const apiKey = 'k_orTxHGFHe5LwWe2rga6ucez8WroPUD013DEn'
-      const response = await fetch(`https://mailsac.com/api/addresses/${encodeURIComponent(currentEmail.email)}/messages`, {
-        headers: {
-          'Mailsac-Key': apiKey,
-        },
-      })
+      const messages = await emailApi.getMessages(currentEmail.email)
       
-      if (response.ok) {
-        const messages = await response.json()
+      if (messages) {
         console.log('Fetched messages:', messages)
         
-        const formattedMessages = messages.map((msg: any, index: number) => ({
+        const formattedMessages = messages.map((msg: MailsacApiMessage, index: number) => ({
           id: msg._id || index,
-          from: msg.from?.[0]?.address || msg.from || 'Unknown',
+          from: Array.isArray(msg.from) ? msg.from[0]?.address : msg.from || 'Unknown',
           subject: msg.subject || 'No Subject',
           date: msg.received || new Date().toISOString(),
           body: '',
@@ -117,17 +94,14 @@ export default function TempEmailPage() {
         if (formattedMessages.length > 0) {
           toast.success(`Found ${formattedMessages.length} message(s)!`)
         }
-      } else {
-        console.error('API response not ok:', response.status)
-        toast.error(`API Error: ${response.status}`)
       }
     } catch (error) {
       console.error('Failed to refresh messages:', error)
-      toast.error('Failed to refresh messages')
+      // Error toast is already handled by useApi hook
     } finally {
       setRefreshing(false)
     }
-  }, [currentEmail])
+  }, [currentEmail, emailApi])
 
   const saveEmail = async () => {
     if (!currentEmail) return
@@ -141,25 +115,17 @@ export default function TempEmailPage() {
       setLoadingMessage(true)
       console.log('Fetching message content for:', messageId)
       
-      const apiKey = 'k_orTxHGFHe5LwWe2rga6ucez8WroPUD013DEn'
-      const response = await fetch(`https://mailsac.com/api/text/${encodeURIComponent(currentEmail.email)}/${messageId}`, {
-        headers: {
-          'Mailsac-Key': apiKey,
-        },
-      })
+      const content = await emailApi.getMessage(currentEmail.email, messageId)
       
-      if (response.ok) {
-        const content = await response.text()
+      if (content) {
         console.log('Fetched message content:', content)
         return content
-      } else {
-        console.error('Failed to fetch message content:', response.status)
-        toast.error('Failed to load message content')
-        return null
       }
+      
+      return null
     } catch (error) {
       console.error('Error fetching message content:', error)
-      toast.error('Failed to load message content')
+      // Error toast is already handled by useApi hook
       return null
     } finally {
       setLoadingMessage(false)
@@ -174,24 +140,6 @@ export default function TempEmailPage() {
     })
   }
 
-
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString('en-US', { 
-      hour: '2-digit', 
-      minute: '2-digit',
-      hour12: true 
-    })
-  }
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    })
-  }
-
   // Auto-generate email on first load
   useEffect(() => {
     if (!currentEmail) {
@@ -199,13 +147,38 @@ export default function TempEmailPage() {
     }
   }, [currentEmail, generateNewEmail])
 
-  // Auto-refresh messages every 10 seconds
+  // Track page visibility to pause polling when tab is not active
   useEffect(() => {
-    if (currentEmail) {
-      const interval = setInterval(refreshMessages, 10000)
+    const handleVisibilityChange = () => {
+      setIsVisible(!document.hidden)
+    }
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
+  }, [])
+
+  // Track online status to pause polling when offline
+  useEffect(() => {
+    const handleOnline = () => setIsOnline(true)
+    const handleOffline = () => setIsOnline(false)
+    
+    window.addEventListener('online', handleOnline)
+    window.addEventListener('offline', handleOffline)
+    
+    return () => {
+      window.removeEventListener('online', handleOnline)
+      window.removeEventListener('offline', handleOffline)
+    }
+  }, [])
+
+  // Auto-refresh messages every 30 seconds (reduced frequency for better performance)
+  // Only poll when page is visible and online to save resources
+  useEffect(() => {
+    if (currentEmail && isVisible && isOnline) {
+      const interval = setInterval(refreshMessages, 30000)
       return () => clearInterval(interval)
     }
-  }, [currentEmail, refreshMessages])
+  }, [currentEmail, isVisible, isOnline, refreshMessages]) // Include all dependencies
 
   return (
     <div className="min-h-screen bg-background">
@@ -224,145 +197,45 @@ export default function TempEmailPage() {
       {/* Main Content */}
       <div className="flex flex-col items-center justify-center p-8 space-y-8 max-w-4xl mx-auto">
         
-        {/* Main Email Card */}
-        <Card className="w-full max-w-2xl border-2 shadow-lg">
-          <CardContent className="p-8 space-y-6">
-            
-            {/* Email Address Display */}
-            <div className="text-center space-y-4">
-              <div className="space-y-2">
-                <h2 className="text-lg font-semibold text-muted-foreground">Your Temporary Email</h2>
-                {currentEmail ? (
-                  <div className="p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-mono font-bold text-primary break-all">
-                      {currentEmail.email}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="p-4 bg-muted rounded-lg animate-pulse">
-                    <div className="h-8 bg-muted-foreground/20 rounded"></div>
-                  </div>
-                )}
-              </div>
-              
-              {/* Last Refreshed */}
-              {lastRefreshed && (
-                <p className="text-sm text-muted-foreground font-mono">
-                  Last refreshed: {formatTime(lastRefreshed)}
-                </p>
-              )}
-            </div>
+        {/* Connection Status */}
+        {!isOnline && (
+          <div className="text-center p-2 bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200 rounded-lg text-sm">
+            Offline - Auto-refresh paused
+          </div>
+        )}
+        {isOnline && !isVisible && (
+          <div className="text-center p-2 bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 rounded-lg text-sm">
+            Auto-refresh paused (tab not active)
+          </div>
+        )}
 
-            {/* Action Buttons */}
-            <div className="flex flex-wrap justify-center gap-3">
-              <Button 
-                variant="outline" 
-                onClick={generateNewEmail}
-                disabled={loading}
-                className="gap-2"
-              >
-                <Shuffle className="h-4 w-4" />
-                Change
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => currentEmail && copyToClipboard(currentEmail.email)}
-                disabled={!currentEmail}
-                className="gap-2"
-              >
-                <Copy className="h-4 w-4" />
-                Copy
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={saveEmail}
-                disabled={!currentEmail}
-                className="gap-2"
-              >
-                <Save className="h-4 w-4" />
-                Save
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={refreshMessages}
-                disabled={!currentEmail || refreshing}
-                className="gap-2"
-              >
-                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-                Refresh
-              </Button>
-            </div>
+        {/* Email Display */}
+        <EmailDisplay 
+          currentEmail={currentEmail}
+          lastRefreshed={lastRefreshed}
+        />
+        
+        {/* Action Buttons */}
+        <EmailActions 
+          currentEmail={currentEmail}
+          loading={loading}
+          refreshing={refreshing}
+          isOnline={isOnline}
+          onGenerateNewEmail={generateNewEmail}
+          onCopyToClipboard={copyToClipboard}
+          onSaveEmail={saveEmail}
+          onRefreshMessages={refreshMessages}
+        />
 
-            <Separator />
+        <Separator className="max-w-2xl" />
 
-            {/* Email Preview/Inbox */}
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Mail className="h-5 w-5" />
-                  Inbox
-                </h3>
-                {currentEmail && currentEmail.messages.length > 0 && (
-                  <Badge variant="secondary">{currentEmail.messages.length}</Badge>
-                )}
-              </div>
-
-              {/* Email List */}
-              <div className="space-y-3 max-h-96 overflow-y-auto">
-                {!currentEmail ? (
-                  <div className="text-center py-8">
-                    <RefreshCw className="h-8 w-8 animate-spin mx-auto mb-2 text-muted-foreground" />
-                    <p className="text-muted-foreground">Generating email...</p>
-                  </div>
-                ) : currentEmail.messages.length === 0 ? (
-                  <div className="text-center py-8 space-y-2">
-                    <Eye className="h-8 w-8 mx-auto text-muted-foreground" />
-                    <p className="text-muted-foreground">No emails yet</p>
-                    <p className="text-xs text-muted-foreground">New messages will appear here automatically</p>
-                  </div>
-                ) : (
-                  currentEmail.messages.map((message, index) => (
-                    <Card 
-                      key={message.id || index} 
-                      className="border-l-4 border-l-primary cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => openMessage(message)}
-                    >
-                      <CardContent className="p-4">
-                        <div className="space-y-2">
-                          <div className="flex items-start justify-between">
-                            <div className="space-y-1 flex-1 min-w-0">
-                              <p className="font-mono text-sm text-muted-foreground truncate">
-                                From: {message.from}
-                              </p>
-                              <p className="font-mono font-semibold truncate">
-                                {message.subject || 'No Subject'}
-                              </p>
-                            </div>
-                            <p className="font-mono text-xs text-muted-foreground whitespace-nowrap ml-4">
-                              {formatDate(message.date)}
-                            </p>
-                          </div>
-                          {(message.body || message.textBody) && (
-                            <div className="pt-2 border-t">
-                              <p className="font-mono text-sm text-muted-foreground line-clamp-2">
-                                {message.textBody || message.body}
-                              </p>
-                            </div>
-                          )}
-                          <div className="flex justify-end pt-2">
-                            <p className="text-xs text-muted-foreground hover:text-primary">
-                              Click to view full message →
-                            </p>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  ))
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Message List */}
+        <div className="w-full max-w-2xl">
+          <MessageList 
+            currentEmail={currentEmail}
+            onOpenMessage={openMessage}
+          />
+        </div>
 
         {/* Footer/Info Section */}
         <div className="text-center space-y-4 max-w-lg">
@@ -373,91 +246,16 @@ export default function TempEmailPage() {
               Perfect for signups, testing, and maintaining your digital privacy.
             </p>
           </div>
-          
         </div>
       </div>
 
       {/* Message Modal */}
-      {selectedMessage && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-50 p-4">
-          <div className="bg-background rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
-            {/* Modal Header */}
-            <div className="flex items-center justify-between p-6 border-b">
-              <div className="space-y-1">
-                <h2 className="text-xl font-semibold truncate">
-                  {selectedMessage.subject || 'No Subject'}
-                </h2>
-                <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                  <span>From: {selectedMessage.from}</span>
-                  <span>{formatDate(selectedMessage.date)}</span>
-                </div>
-              </div>
-              <Button 
-                variant="outline" 
-                size="icon"
-                onClick={() => setSelectedMessage(null)}
-              >
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            {/* Modal Content */}
-            <div className="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
-              {loadingMessage ? (
-                <div className="flex items-center justify-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin mr-2" />
-                  <span>Loading message content...</span>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {/* Message Content */}
-                  <div className="bg-muted rounded-lg p-4">
-                    <pre className="whitespace-pre-wrap font-mono text-sm break-words">
-                      {selectedMessage.textBody || selectedMessage.body || 'No content available'}
-                    </pre>
-                  </div>
-                  
-                  {/* Attachments */}
-                  {selectedMessage.attachments && selectedMessage.attachments.length > 0 && (
-                    <div className="space-y-2">
-                      <h3 className="font-semibold">Attachments ({selectedMessage.attachments.length})</h3>
-                      <div className="space-y-1">
-                        {selectedMessage.attachments.map((attachment, index) => (
-                          <div key={index} className="flex items-center gap-2 p-2 bg-muted rounded text-sm">
-                            <span className="font-mono">{attachment.filename || `Attachment ${index + 1}`}</span>
-                            {attachment.size && (
-                              <span className="text-muted-foreground">({attachment.size} bytes)</span>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-            
-            {/* Modal Footer */}
-            <div className="flex items-center justify-between p-6 border-t">
-              <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => copyToClipboard(selectedMessage.textBody || selectedMessage.body || '')}
-                >
-                  <Copy className="h-4 w-4 mr-2" />
-                  Copy Content
-                </Button>
-              </div>
-              <Button 
-                variant="outline" 
-                onClick={() => setSelectedMessage(null)}
-              >
-                Close
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <MessageModal 
+        message={selectedMessage}
+        loadingMessage={loadingMessage}
+        onClose={() => setSelectedMessage(null)}
+        onCopyToClipboard={copyToClipboard}
+      />
     </div>
   )
 }
