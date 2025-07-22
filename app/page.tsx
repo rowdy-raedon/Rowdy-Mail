@@ -1,22 +1,12 @@
-'use client'
-
-import { useEffect } from 'react'
+import { Suspense } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Mail, ArrowRight, Zap, Shield, Clock } from 'lucide-react'
+import Link from 'next/link'
 
-export default function HomePage() {
-  // Auto-redirect to temp email after a short delay
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      window.location.href = '/temp-email'
-    }, 3000)
-    
-    return () => clearTimeout(timer)
-  }, [])
-
+function HomePageContent() {
   return (
-    <div className="min-h-screen bg-background">
+    <>
       {/* Header */}
       <div className="p-6 border-b">
         <div className="max-w-6xl mx-auto">
@@ -39,19 +29,17 @@ export default function HomePage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button size="lg" className="gap-2" onClick={() => window.location.href = '/temp-email'}>
-              <Mail className="h-5 w-5" />
-              Get Temporary Email
-              <ArrowRight className="h-4 w-4" />
-            </Button>
+            <Link href="/temp-email">
+              <Button size="lg" className="gap-2">
+                <Mail className="h-5 w-5" />
+                Get Temporary Email
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </Link>
             <Button variant="outline" size="lg">
               Learn More
             </Button>
           </div>
-
-          <p className="text-sm text-muted-foreground">
-            Redirecting to temp email service in 3 seconds...
-          </p>
         </div>
 
         {/* Features Grid */}
@@ -117,6 +105,23 @@ export default function HomePage() {
           </p>
         </div>
       </div>
+    </>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <div className="min-h-screen bg-background">
+      <Suspense fallback={
+        <div className="min-h-screen flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Loading...</p>
+          </div>
+        </div>
+      }>
+        <HomePageContent />
+      </Suspense>
     </div>
   )
 }
