@@ -109,28 +109,31 @@ export function useEmailApi() {
   const api = useApi()
 
   const generateEmail = useCallback(async () => {
-    return api.call('/api/emails', {
+    return await api.call('/api/emails', {
       method: 'POST',
       body: JSON.stringify({ action: 'generateEmail' })
     })
-  }, [api])
+  }, [api.call])
 
   const getMessages = useCallback(async (email: string) => {
-    return api.call('/api/emails', {
+    return await api.call('/api/emails', {
       method: 'POST',
       body: JSON.stringify({ action: 'getMessages', email })
     })
-  }, [api])
+  }, [api.call])
 
   const getMessage = useCallback(async (email: string, messageId: string) => {
-    return api.call('/api/emails', {
+    return await api.call('/api/emails', {
       method: 'POST',
       body: JSON.stringify({ action: 'getMessage', email, messageId })
     })
-  }, [api])
+  }, [api.call])
 
   return {
-    ...api,
+    loading: api.loading,
+    error: api.error,
+    data: api.data,
+    reset: api.reset,
     generateEmail,
     getMessages,
     getMessage

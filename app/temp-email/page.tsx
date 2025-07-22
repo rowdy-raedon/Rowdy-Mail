@@ -55,7 +55,7 @@ export default function TempEmailPage() {
     } finally {
       setLoading(false)
     }
-  }, [emailApi])
+  }, [emailApi.generateEmail])
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -101,7 +101,7 @@ export default function TempEmailPage() {
     } finally {
       setRefreshing(false)
     }
-  }, [currentEmail, emailApi])
+  }, [currentEmail, emailApi.getMessages])
 
   const saveEmail = async () => {
     if (!currentEmail) return
@@ -142,10 +142,20 @@ export default function TempEmailPage() {
 
   // Auto-generate email on first load
   useEffect(() => {
+    let mounted = true
     if (!currentEmail) {
-      generateNewEmail()
+      generateNewEmail().then(() => {
+        if (!mounted) return
+        // Email generated successfully
+      }).catch(() => {
+        if (!mounted) return
+        // Error already handled by useApi hook
+      })
     }
-  }, [currentEmail, generateNewEmail])
+    return () => {
+      mounted = false
+    }
+  }, []) // Remove dependencies to prevent infinite loop
 
   // Track page visibility to pause polling when tab is not active
   useEffect(() => {
@@ -178,7 +188,7 @@ export default function TempEmailPage() {
       const interval = setInterval(refreshMessages, 30000)
       return () => clearInterval(interval)
     }
-  }, [currentEmail, isVisible, isOnline, refreshMessages]) // Include all dependencies
+  }, [currentEmail, isVisible, isOnline, refreshMessages])
 
   return (
     <div className="min-h-screen bg-background">
